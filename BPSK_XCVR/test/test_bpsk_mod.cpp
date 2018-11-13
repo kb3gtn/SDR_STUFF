@@ -11,22 +11,42 @@
 void PrintDataBuffer( std::vector<uint8_t> buffer );
 void PrintSampleBuffer( std::vector<fc32_t> buffer );
 
-
 int main() {
     PRBS_11_GEN prbs11_gen;
-    BPSK_SYMBOL_MAPPER bpsk_map( 
-            BPSK_SYMBOL_MAPPER::MAPPING_t::normal, 
+    BPSK_SYMBOL_MAPPER bpsk_map(
+            BPSK_SYMBOL_MAPPER::MAPPING_t::normal,
             BPSK_SYMBOL_MAPPER::PCM_CODE_t::NRZ_L );
 
     IntUpSampleSymbols up_samp_by_4( 4 );
-    std::vector<fc32_t> shape_filter_coef = { (fc32_t){0.05,0.05}, (fc32_t){0.2,0.2}, (fc32_t){0.5,0.5}, (fc32_t){0.2,0.2}, (fc32_t){0.05,0.05} };
+    //std::vector<fc32_t> shape_filter_coef = { (fc32_t){0.05,0.05}, (fc32_t){0.2,0.2}, (fc32_t){0.5,0.5}, (fc32_t){0.2,0.2}, (fc32_t){0.05,0.05} };
+
+    // Root Raised Cosign  Beta=0.3 4 samples per bit.
+    std::vector<fc32_t> shape_filter_coef = {
+        (fc32_t){0.028379, 0.028379},
+        (fc32_t){-0.019107, -0.019107},
+        (fc32_t){ -0.077021, -0.077021},
+        (fc32_t) {-0.097727, -0.097727},
+        (fc32_t){-0.037608, -0.037608},
+        (fc32_t){ 0.111661,	0.111661},
+        (fc32_t){0.308549,	0.308549},
+        (fc32_t){0.476544,	0.476544},
+        (fc32_t){0.542527,	0.542527},
+        (fc32_t){0.476544,	0.476544},
+        (fc32_t){0.308549,	0.308549},
+        (fc32_t){0.111661,	0.111661},
+        (fc32_t){ -0.037608, -0.037608},
+        (fc32_t){ -0.097727, -0.097727},
+        (fc32_t){ -0.077021, -0.077021},
+        (fc32_t){ -0.019107, -0.019107},
+        (fc32_t){ 0.028379, 0.028379 }
+    };
+
     fir_filter shape_filter( shape_filter_coef );
 
     std::vector<uint8_t> data_buffer1;
     std::vector<fc32_t> symbol_buffer1;
     std::vector<fc32_t> symbol_buffer2;
     std::vector<fc32_t> symbol_buffer3;
-
 
     // allocate space in buffer and fill..
     data_buffer1.resize(128);
@@ -40,7 +60,7 @@ int main() {
     bpsk_map.map2symbols( data_buffer1, symbol_buffer1 );
     printf("Upsampling by 4\n");
     up_samp_by_4( symbol_buffer1, symbol_buffer2 );
-    
+
     printf("Symbols generated, %lu symbols\n", symbol_buffer2.size() );
     PrintSampleBuffer( symbol_buffer2 );
     printf("\n");
@@ -57,10 +77,8 @@ int main() {
         printf(" {%f,%f} ", symbol_buffer3[i].i, symbol_buffer3[i].q );
     }
 
-
     printf("\nDone..\n");
 
- 
     return 0;
 }
 
@@ -89,7 +107,7 @@ void PrintDataBuffer( std::vector<uint8_t> buffer ) {
                      putchar(' ');
                 }
                 else if(isprint(((char*)mem)[j])) {
-                    putchar(0xFF & ((char*)mem)[j]);        
+                    putchar(0xFF & ((char*)mem)[j]);
                 }
                 else {
                     putchar('.');
@@ -98,6 +116,10 @@ void PrintDataBuffer( std::vector<uint8_t> buffer ) {
             putchar('\n');
         }
     }
+}
+
+void SampleBuffer( std::vector<fc32_t> buffer ) {
+
 }
 
 
@@ -125,7 +147,7 @@ void PrintSampleBuffer( std::vector<fc32_t> buffer ) {
             line_idx = 0;
         }
         // print sample unicode representation to buffer.
-        if ( i >= 0.75 ) { 
+        if ( i >= 0.75 ) {
             sprintf(&iline[lo+(line_idx*3)], "\xe2\x8e\xba" ); // high line
         } else if ( ( i < 0.75 ) && ( i >= 0.25 ) ) {
             sprintf(&iline[lo+(line_idx*3)], "\xe2\x8e\xbb" ); // mid high line
@@ -136,7 +158,7 @@ void PrintSampleBuffer( std::vector<fc32_t> buffer ) {
         } else {
             sprintf(&iline[lo+(line_idx*3)], "\xe2\x80\x97" ); // low line
         }
-        if ( q > 0.75 ) { 
+        if ( q > 0.75 ) {
             sprintf(&qline[lo+(line_idx*3)], "\xe2\x8e\xba" ); // high line
         } else if ( ( q < 0.75 ) && ( q >= 0.25 ) ) {
             sprintf(&qline[lo+(line_idx*3)], "\xe2\x8e\xbb" ); // mid high line
@@ -147,7 +169,7 @@ void PrintSampleBuffer( std::vector<fc32_t> buffer ) {
         } else {
             sprintf(&qline[lo+(line_idx*3)], "\xe2\x80\x97" ); // low line
         }
-         // next location in the line.. 
+         // next location in the line..
         line_idx++;
         sample++; // point to next sample.
     } // end idx for loop.
